@@ -79,7 +79,7 @@ public class ExecuteJar {
             boolean local,
             boolean linux
     ) {
-        String jarCommand = "java -jar " + this.jarPath + " com.advos.MAPProtocol -c " +
+        String jarCommand = "java -jar " + this.jarPath + " com.advos.MutualExclusionTesting -c " +
                 (local ? this.configFile : this.configFileOnDC) + " -id " + nodeId;
         if(isActive) jarCommand += " -a";
 
