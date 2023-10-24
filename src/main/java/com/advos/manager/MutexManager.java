@@ -1,17 +1,21 @@
 package com.advos.manager;
 
 import com.advos.cs.CriticalSection;
+import com.advos.utils.Node;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class MutexManager {
-    private AtomicInteger csCounter;
+    private final AtomicInteger csCounter;
+    private final Node node;
     private final CriticalSection cs;
     private Map<Integer, Boolean> keys;
 
-    protected MutexManager(CriticalSection cs) {
+    protected MutexManager(CriticalSection cs, Node node) {
         this.cs = cs;
+        this.node = node;
+        this.csCounter = new AtomicInteger(0);
     }
 
     public void executeCS() {

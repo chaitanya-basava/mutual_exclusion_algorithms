@@ -12,14 +12,14 @@ public class Config {
     private final int n;
     private final int meanInterRequestDelay;
     private final int meanCSExecutionTime;
-    private final int maxNumRequests;
+    private final int maxCsRequests;
     private final Map<Integer, NodeInfo> nodes = new HashMap<>();
 
     public Config(int n, int meanInterRequestDelay, int meanCSExecutionTime, int maxNumRequests) {
         this.n = n;
         this.meanInterRequestDelay = meanInterRequestDelay;
         this.meanCSExecutionTime = meanCSExecutionTime;
-        this.maxNumRequests = maxNumRequests;
+        this.maxCsRequests = maxNumRequests;
     }
 
     public void populateNeighbours() {
@@ -43,8 +43,8 @@ public class Config {
         return meanCSExecutionTime;
     }
 
-    public int getMaxNumRequests() {
-        return maxNumRequests;
+    public int getMaxCsRequests() {
+        return maxCsRequests;
     }
 
     public NodeInfo getNode(int idx) {
@@ -64,10 +64,10 @@ public class Config {
         StringBuilder str = new StringBuilder();
 
         str
-                .append("\nNodes: ").append(this.getN())
-                .append("\nminPerActive: ").append(this.getMeanInterRequestDelay())
-                .append("\nmaxPerActive: ").append(this.getMeanCSExecutionTime())
-                .append("\nminSendDelay: ").append(this.getMaxNumRequests());
+                .append("\n# Nodes: ").append(this.getN())
+                .append("\nMean inter request delay: ").append(this.getMeanInterRequestDelay())
+                .append("\nMean CS execution time: ").append(this.getMeanCSExecutionTime())
+                .append("\n# CS requests: ").append(this.getMaxCsRequests());
 
         for(Map.Entry<Integer, NodeInfo> entry: nodes.entrySet()) {
             str

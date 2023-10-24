@@ -16,21 +16,24 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Node {
     private static final Logger logger = LoggerFactory.getLogger(Node.class);
     private final Config config;
     private final MutexManager mutexManager;
     private final NodeInfo nodeInfo;
+    private final AtomicInteger lamportClock;
     private final Map<Integer, Channel> inChannels = new HashMap<>();
     private final Map<Integer, Channel> outChannels = new HashMap<>();
 
     public Node(Config config, NodeInfo nodeInfo) {
         this.config = config;
         this.nodeInfo = nodeInfo;
+        this.lamportClock = new AtomicInteger(0);
 
         CriticalSection cs = new TimeRunnerCriticalSection(this.config.getMeanCSExecutionTime());
-        this.mutexManager = new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), nodeInfo.getId());
+        this.mutexManager = new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), this);
 
         new Thread(this::startServer, "Socket Server Thread").start();
         this.startClient();
@@ -101,8 +104,16 @@ public class Node {
         return this.nodeInfo;
     }
 
+    public int getLamportClock() {
+        return lamportClock.get();
+    }
+
+    public int incrLamportClock() {
+        return lamportClock.incrementAndGet();
+    }
+
     public void startAlgorithm() {
-        while(this.mutexManager.getCsCounter() < this.config.getMaxNumRequests()) {
+        while(this.mutexManager.getCsCounter() < this.config.getMaxCsRequests()) {
             this.mutexManager.csEnter();
             this.mutexManager.executeCS();
             this.mutexManager.csLeave();
