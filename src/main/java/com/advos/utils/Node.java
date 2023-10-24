@@ -1,6 +1,10 @@
 package com.advos.utils;
 
 import com.advos.MutualExclusionTesting;
+import com.advos.cs.CriticalSection;
+import com.advos.cs.TimeRunnerCriticalSection;
+import com.advos.manager.MutexManager;
+import com.advos.manager.RoucairolCarvalhoManager;
 import com.advos.message.*;
 import com.advos.models.Config;
 import com.advos.models.NodeInfo;
@@ -16,6 +20,7 @@ import java.util.*;
 public class Node {
     private static final Logger logger = LoggerFactory.getLogger(Node.class);
     private final Config config;
+    private final MutexManager mutexManager;
     private final NodeInfo nodeInfo;
     private final Map<Integer, Channel> inChannels = new HashMap<>();
     private final Map<Integer, Channel> outChannels = new HashMap<>();
@@ -23,6 +28,9 @@ public class Node {
     public Node(Config config, NodeInfo nodeInfo) {
         this.config = config;
         this.nodeInfo = nodeInfo;
+
+        CriticalSection cs = new TimeRunnerCriticalSection(this.config.getMeanCSExecutionTime());
+        this.mutexManager = new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), nodeInfo.getId());
 
         new Thread(this::startServer, "Socket Server Thread").start();
         this.startClient();
@@ -56,7 +64,7 @@ public class Node {
         try {
             Channel channel = new Channel(hostname, port, this, neighbourId);
             this.outChannels.put(neighbourId, channel);
-            channel.sendMessage(new Connection(this.nodeInfo.getId()));
+            this.send(neighbourId, new Connection(this.nodeInfo.getId()));
             logger.info("Connected to " + channel.getSocket().getInetAddress().getHostAddress() + ":" + channel.getSocket().getPort());
         } catch (IOException e) {
             logger.error("Couldn't connect to " + hostname + ":" + port);
@@ -91,6 +99,14 @@ public class Node {
 
     public NodeInfo getNodeInfo() {
         return this.nodeInfo;
+    }
+
+    public void startAlgorithm() {
+        while(this.mutexManager.getCsCounter() < this.config.getMaxNumRequests()) {
+            this.mutexManager.csEnter();
+            this.mutexManager.executeCS();
+            this.mutexManager.csLeave();
+        }
     }
 
     public void close() {

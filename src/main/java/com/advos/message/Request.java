@@ -1,17 +1,20 @@
 package com.advos.message;
 
 public class Request extends Message {
-    public Request(int sourceNodeId) {
-        super("Request message", sourceNodeId);
+    public Request(long clock, int sourceNodeId) {
+        super(clock, sourceNodeId);
     }
 
     @Override
     public String toString() {
-        return "[RequestMessage]----sourceNodeId:" + this.getSourceNodeId();
+        return "[Request]" + super.toString();
     }
 
     public static Request deserialize(String serializedRequestMessage) {
         String[] requestMessage = serializedRequestMessage.split("----");
-        return new Request(Integer.parseInt(requestMessage[2].split(":")[1]));
+        return new Request(
+                Integer.parseInt(requestMessage[1].split(":")[1]),
+                Integer.parseInt(requestMessage[2].split(":")[1])
+        );
     }
 }

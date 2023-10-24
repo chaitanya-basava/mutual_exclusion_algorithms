@@ -47,12 +47,12 @@ public class Channel {
                 line = this.in.readUTF();
                 msg.append(line);
 
-                if(msg.toString().endsWith(Config.MESSAGE_DELIMITER) && (msg.toString().contains("[ConnectionMessage]"))) {
+                if(msg.toString().endsWith(Config.MESSAGE_DELIMITER) && (msg.toString().contains("[Connection]"))) {
                     this.neighbourId = Connection.deserialize(msg.toString()).getSourceNodeId();
                     break;
                 }
             } catch (EOFException ignored) {
-                MutualExclusionTesting.sleep(100);
+                MutualExclusionTesting.sleep(Config.RETRY_MESSAGE_READING_DELAY);
             }
             catch (IOException e) {
                 logger.error(e.getMessage());
@@ -69,14 +69,13 @@ public class Channel {
                 msg.append(line);
 
                 if(msg.toString().endsWith(Config.MESSAGE_DELIMITER)) {
-
-
+                    // TODO: Implement message processing
                     msg = new StringBuilder();
                 }
             } catch (IOException | ClassCastException e) {
                 if(e.getMessage().equals("Stream closed") || e.getMessage().equals("Socket closed")) break;
                 logger.error(e.getMessage());
-                MutualExclusionTesting.sleep(500);
+                MutualExclusionTesting.sleep(Config.RETRY_MESSAGE_READING_DELAY);
             }
         }
     }

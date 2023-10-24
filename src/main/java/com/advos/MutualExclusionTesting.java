@@ -66,6 +66,8 @@ public class MutualExclusionTesting {
             this.cleanup();
             logger.info("\n");
         }, "Shutdown Listener"));
+
+        this.node.startAlgorithm();
     }
 
     public static void sleep(int milliseconds) {

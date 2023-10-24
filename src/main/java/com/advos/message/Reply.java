@@ -1,17 +1,20 @@
 package com.advos.message;
 
 public class Reply extends Message {
-    public Reply(int sourceNodeId) {
-        super("Reply message", sourceNodeId);
+    public Reply(long clock, int sourceNodeId) {
+        super(clock, sourceNodeId);
     }
 
     @Override
     public String toString() {
-        return "[ReplyMessage]----sourceNodeId:" + this.getSourceNodeId();
+        return "[Reply]" + super.toString();
     }
 
     public static Reply deserialize(String serializedReplyMessage) {
         String[] replyMessage = serializedReplyMessage.split("----");
-        return new Reply(Integer.parseInt(replyMessage[2].split(":")[1]));
+        return new Reply(
+                Integer.parseInt(replyMessage[1].split(":")[1]),
+                Integer.parseInt(replyMessage[2].split(":")[1])
+        );
     }
 }

@@ -3,21 +3,24 @@ package com.advos.message;
 import java.io.Serializable;
 
 public abstract class Message implements Serializable {
-    private final String msg;
+    private final long clock;
     private final int sourceNodeId;
 
-    protected Message(String msg, int sourceNodeId) {
-        this.msg = msg;
+    protected Message(long clock, int sourceNodeId) {
+        this.clock = clock;
         this.sourceNodeId = sourceNodeId;
     }
 
-    public String getMsg() {
-        return msg;
+    public long getClock() {
+        return clock;
     }
 
     public int getSourceNodeId() {
         return sourceNodeId;
     }
 
-    public abstract String toString();
+    public String toString() {
+        return "----clock:" + this.getClock() +
+                "----sourceNodeId:" + this.getSourceNodeId();
+    }
 }
