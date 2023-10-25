@@ -91,7 +91,7 @@ public class Node {
         logger.info("Connected to " + this.outChannels.size() + " channel(s)");
     }
 
-    private void send(int destId, Message message) {
+    public void send(int destId, Message message) {
         this.outChannels.get(destId).sendMessage(message);
     }
 
@@ -108,8 +108,8 @@ public class Node {
         return lamportClock.get();
     }
 
-    public int incrLamportClock() {
-        return lamportClock.incrementAndGet();
+    public void incrLamportClock() {
+        lamportClock.incrementAndGet();
     }
 
     public void startAlgorithm() {
