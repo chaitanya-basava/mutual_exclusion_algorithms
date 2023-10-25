@@ -1,13 +1,12 @@
 package com.advos.manager;
 
 import com.advos.cs.CriticalSection;
+import com.advos.message.Message;
 import com.advos.utils.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,7 +18,8 @@ public abstract class MutexManager {
     public final Node node;
     private final CriticalSection cs;
     private Map<Integer, Boolean> keys;
-    private final Map<Integer, Boolean> differedRequests;
+    private int csRequestTime;
+    private final List<Integer> differedRequests;
 
     protected MutexManager(CriticalSection cs, Node node) {
         this.cs = cs;
@@ -27,10 +27,10 @@ public abstract class MutexManager {
         this.usingCS = new AtomicBoolean(false);
         this.requestingCS = new AtomicBoolean(false);
         this.csCounter = new AtomicInteger(0);
-        this.differedRequests = new ConcurrentHashMap<>();
+        this.differedRequests = new ArrayList<>();
     }
 
-    public void executeCS() {
+    public final void executeCS() {
         this.cs.execute();
         logger.info("Executed critical section - " + this.incrCsCounter());
     }
@@ -39,57 +39,66 @@ public abstract class MutexManager {
 
     public abstract void csLeave();
 
-    public Map<Integer, Boolean> getKeys() {
+    public abstract void processCSRequest(Message msg);
+
+    public final Map<Integer, Boolean> getKeys() {
         return keys;
     }
 
-    public void setKeys(Map<Integer, Boolean> keys) {
+    public final void setKeys(Map<Integer, Boolean> keys) {
         this.keys = keys;
     }
 
-    public int getCsCounter() {
+    public final int getCsCounter() {
         return csCounter.get();
     }
 
-    public int incrCsCounter() {
+    public final int incrCsCounter() {
         return this.csCounter.incrementAndGet();
     }
 
-    public Map<Integer, Boolean> getDifferedRequests() {
+    public final List<Integer> getDifferedRequests() {
         return differedRequests;
     }
 
-    public void setDifferedRequests(int nodeId) {
-        this.differedRequests.put(nodeId, true);
+    public final void setDifferedRequests(int nodeId) {
+        this.differedRequests.add(nodeId);
     }
 
-    public void clearDifferedRequests() {
+    public final void clearDifferedRequests() {
         this.differedRequests.clear();
     }
 
-    public boolean getRequestingCS() {
+    public final boolean getRequestingCS() {
         return this.requestingCS.get();
     }
 
-    public void setRequestingCS(boolean requestingCS) {
+    public final void setRequestingCS(boolean requestingCS) {
         this.requestingCS.set(requestingCS);
     }
 
-    public boolean getUsingCS() {
+    public final boolean getUsingCS() {
         return this.usingCS.get();
     }
 
-    public void setUsingCS(boolean requestingCS) {
+    public final void setUsingCS(boolean requestingCS) {
         this.usingCS.set(requestingCS);
     }
 
-    public boolean checkCSPermission() {
-        synchronized(node) {
-            for (boolean key : this.keys.values()) {
-                if (!key) return false;
-            }
+    public final int getCSRequestTime() { return csRequestTime; }
 
-            return true;
+    public final void setCSRequestTime(int csRequestTime) { this.csRequestTime = csRequestTime; }
+
+    public final boolean checkCSPermission() {
+        synchronized(node) {
+            synchronized(this) {
+                for (boolean key : this.keys.values()) {
+                    if (!key) return false;
+                }
+
+                this.setUsingCS(true);
+                return true;
+            }
         }
     }
 }

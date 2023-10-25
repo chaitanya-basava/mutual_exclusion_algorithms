@@ -67,7 +67,7 @@ public class Node {
         try {
             Channel channel = new Channel(hostname, port, this, neighbourId);
             this.outChannels.put(neighbourId, channel);
-            this.send(neighbourId, new Connection(this.nodeInfo.getId()));
+            this.send(neighbourId, new Connection(this.nodeInfo.getId()), false);
             logger.info("Connected to " + channel.getSocket().getInetAddress().getHostAddress() + ":" + channel.getSocket().getPort());
         } catch (IOException e) {
             logger.error("Couldn't connect to " + hostname + ":" + port);
@@ -91,8 +91,11 @@ public class Node {
         logger.info("Connected to " + this.outChannels.size() + " channel(s)");
     }
 
-    public void send(int destId, Message message) {
-        this.outChannels.get(destId).sendMessage(message);
+    public void send(int destId, Message message, boolean incrementClock) {
+        synchronized(this) {
+            if(incrementClock) this.incrLamportClock();
+            this.outChannels.get(destId).sendMessage(message);
+        }
     }
 
     @Override
@@ -110,6 +113,10 @@ public class Node {
 
     public void incrLamportClock() {
         lamportClock.incrementAndGet();
+    }
+
+    public void updateLamportClock(int msgClock) {
+        this.lamportClock.set(Math.max(msgClock, this.getLamportClock()) + 1);
     }
 
     public void startAlgorithm() {

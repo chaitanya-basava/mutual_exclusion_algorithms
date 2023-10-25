@@ -32,10 +32,13 @@ public class RoucairolCarvalhoManager extends MutexManager {
         super.setRequestingCS(true);
 
         synchronized(node) {
-            node.incrLamportClock();
-            for (Map.Entry<Integer, Boolean> entry : super.getKeys().entrySet()) {
-                if(Boolean.FALSE.equals(entry.getValue())) {
-                    node.send(entry.getKey(), new Request(node.getLamportClock(), node.getNodeInfo().getId()));
+            synchronized(this) {
+                node.incrLamportClock();
+                super.setCSRequestTime(node.getLamportClock());
+                for (Map.Entry<Integer, Boolean> entry : super.getKeys().entrySet()) {
+                    if(Boolean.FALSE.equals(entry.getValue())) {
+                        node.send(entry.getKey(), new Request(node.getLamportClock(), node.getNodeInfo().getId()), false);
+                    }
                 }
             }
         }
@@ -43,14 +46,52 @@ public class RoucairolCarvalhoManager extends MutexManager {
         while(super.checkCSPermission()) {
             MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
         }
-
-        super.setUsingCS(true);
     }
 
     @Override
     public void csLeave() {
-        super.setRequestingCS(false);
-        super.setUsingCS(false);
+        synchronized(node) {
+            synchronized(this) {
+                super.setRequestingCS(false);
+                super.setUsingCS(false);
+
+                for(int differedNodeId: super.getDifferedRequests()) {
+                    node.send(differedNodeId, new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                }
+
+                super.clearDifferedRequests();
+            }
+        }
     }
 
+    @Override
+    public void processCSRequest(Message msg) {
+        synchronized(node) {
+            synchronized(this) {
+                if(super.getUsingCS()) {
+                    super.setDifferedRequests(msg.getSourceNodeId());
+                    return;
+                }
+
+                if(!super.getRequestingCS()) {
+                    node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                    return;
+                }
+
+                if(msg.getClock() < super.getCSRequestTime()) { // requesting node has lower clock (higher priority)
+                    node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                    node.send(msg.getSourceNodeId(), new Request(super.getCSRequestTime(), node.getNodeInfo().getId()), true);
+                } else if(msg.getClock() == super.getCSRequestTime()) { // same clock
+                    if(msg.getSourceNodeId() < node.getNodeInfo().getId()) {
+                        node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                        node.send(msg.getSourceNodeId(), new Request(super.getCSRequestTime(), node.getNodeInfo().getId()), true);
+                    } else {
+                        super.setDifferedRequests(msg.getSourceNodeId());
+                    }
+                } else {
+                    super.setDifferedRequests(msg.getSourceNodeId());
+                }
+            }
+        }
+    }
 }
