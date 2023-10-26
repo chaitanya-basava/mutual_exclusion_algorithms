@@ -69,8 +69,23 @@ public class Channel {
                 msg.append(line);
 
                 if(msg.toString().endsWith(Config.MESSAGE_DELIMITER)) {
-                    // TODO: Implement message processing
-                    msg = new StringBuilder();
+                    synchronized(node) {
+                        if(msg.toString().contains("[Request]")) {
+                            Request request = Request.deserialize(msg.toString());
+                            node.updateLamportClock(request.getClock());
+                            this.node.processRequestMsg(request);
+                        } else if(msg.toString().contains("[Reply]")) {
+                            Reply reply = Reply.deserialize(msg.toString());
+                            node.updateLamportClock(reply.getClock());
+                            this.node.processReplyMsg(reply);
+                        } else if(msg.toString().contains("[Terminate]")) {
+                            Terminate terminate = Terminate.deserialize(msg.toString());
+                            node.updateLamportClock(terminate.getClock());
+                            this.node.processTerminateMsg(terminate);
+                        }
+
+                        msg = new StringBuilder();
+                    }
                 }
             } catch (IOException | ClassCastException e) {
                 if(e.getMessage().equals("Stream closed") || e.getMessage().equals("Socket closed")) break;

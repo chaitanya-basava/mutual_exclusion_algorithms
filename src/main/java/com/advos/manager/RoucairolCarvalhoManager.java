@@ -57,9 +57,13 @@ public class RoucairolCarvalhoManager extends MutexManager {
 
                 for(int differedNodeId: super.getDifferedRequests()) {
                     node.send(differedNodeId, new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                    super.setKey(differedNodeId, false);
                 }
 
                 super.clearDifferedRequests();
+
+                logger.info("\nCompleted using CS " + super.getCsCounter() +
+                        " time(s)\nstart:" + super.getCSRequestTime() + " end: " + node.getLamportClock() + "\n");
             }
         }
     }

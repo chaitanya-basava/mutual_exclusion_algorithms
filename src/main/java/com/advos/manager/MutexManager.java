@@ -18,7 +18,7 @@ public abstract class MutexManager {
     public final Node node;
     private final CriticalSection cs;
     private Map<Integer, Boolean> keys;
-    private int csRequestTime;
+    private long csRequestTime;
     private final List<Integer> differedRequests;
 
     protected MutexManager(CriticalSection cs, Node node) {
@@ -41,12 +41,24 @@ public abstract class MutexManager {
 
     public abstract void processCSRequest(Message msg);
 
+    public final void processCSReply(Message msg) {
+        synchronized(node) {
+            synchronized(this) {
+                this.keys.put(msg.getSourceNodeId(), true);
+            }
+        }
+    }
+
     public final Map<Integer, Boolean> getKeys() {
         return keys;
     }
 
     public final void setKeys(Map<Integer, Boolean> keys) {
         this.keys = keys;
+    }
+
+    public final void setKey(int nodeId, boolean permission) {
+        this.keys.put(nodeId, permission);
     }
 
     public final int getCsCounter() {
@@ -85,13 +97,13 @@ public abstract class MutexManager {
         this.usingCS.set(requestingCS);
     }
 
-    public final int getCSRequestTime() { return csRequestTime; }
+    public final long getCSRequestTime() { return csRequestTime; }
 
-    public final void setCSRequestTime(int csRequestTime) { this.csRequestTime = csRequestTime; }
+    public final void setCSRequestTime(long csRequestTime) { this.csRequestTime = csRequestTime; }
 
     public final boolean checkCSPermission() {
-        synchronized(node) {
-            synchronized(this) {
+        synchronized (node) {
+            synchronized (this) {
                 for (boolean key : this.keys.values()) {
                     if (!key) return false;
                 }

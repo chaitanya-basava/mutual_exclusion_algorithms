@@ -16,21 +16,22 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Node {
     private static final Logger logger = LoggerFactory.getLogger(Node.class);
     private final Config config;
     private final MutexManager mutexManager;
     private final NodeInfo nodeInfo;
-    private final AtomicInteger lamportClock;
+    private final AtomicLong lamportClock;
     private final Map<Integer, Channel> inChannels = new HashMap<>();
     private final Map<Integer, Channel> outChannels = new HashMap<>();
+    private final Set<Integer> terminate = new HashSet<>();
 
     public Node(Config config, NodeInfo nodeInfo) {
         this.config = config;
         this.nodeInfo = nodeInfo;
-        this.lamportClock = new AtomicInteger(0);
+        this.lamportClock = new AtomicLong(0);
 
         CriticalSection cs = new TimeRunnerCriticalSection(this.config.getMeanCSExecutionTime());
         this.mutexManager = new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), this);
@@ -107,7 +108,7 @@ public class Node {
         return this.nodeInfo;
     }
 
-    public int getLamportClock() {
+    public long getLamportClock() {
         return lamportClock.get();
     }
 
@@ -115,7 +116,7 @@ public class Node {
         lamportClock.incrementAndGet();
     }
 
-    public void updateLamportClock(int msgClock) {
+    public void updateLamportClock(long msgClock) {
         this.lamportClock.set(Math.max(msgClock, this.getLamportClock()) + 1);
     }
 
@@ -125,6 +126,34 @@ public class Node {
             this.mutexManager.executeCS();
             this.mutexManager.csLeave();
         }
+    }
+
+    public void stopAlgorithm() {
+        this.incrLamportClock();
+        for (int neighbourId: this.getNodeInfo().getNeighbors()) {
+            this.send(neighbourId, new Terminate(this.getLamportClock(), this.getNodeInfo().getId()), false);
+        }
+    }
+
+    public void processRequestMsg(Message msg) {
+        this.mutexManager.processCSRequest(msg);
+    }
+
+    public void processReplyMsg(Message msg) {
+        this.mutexManager.processCSReply(msg);
+    }
+
+    public void processTerminateMsg(Message msg) {
+        this.addToTerminate(msg.getSourceNodeId());
+        if(this.getTerminateSize() == config.getN()) System.exit(0);
+    }
+
+    public void addToTerminate(int nodeId) {
+        this.terminate.add(nodeId);
+    }
+
+    public int getTerminateSize() {
+        return this.terminate.size();
     }
 
     public void close() {
