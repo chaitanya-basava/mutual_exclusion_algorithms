@@ -11,7 +11,7 @@ public class Reply extends Message {
     }
 
     public static Reply deserialize(String serializedReplyMessage) {
-        String[] replyMessage = serializedReplyMessage.split("----");
+        String[] replyMessage = Message.msgPreProcess(serializedReplyMessage).split("----");
         return new Reply(
                 Integer.parseInt(replyMessage[1].split(":")[1]),
                 Integer.parseInt(replyMessage[2].split(":")[1])

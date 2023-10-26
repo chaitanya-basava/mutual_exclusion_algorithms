@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,7 +23,6 @@ public class ExecuteJar {
     private final boolean local;
     private final boolean linux;
     private final Config config;
-    private final Random rand = new Random();
 
     private CommandLine parseArgs(String[] args) {
         Options options = new Options();
@@ -75,13 +71,11 @@ public class ExecuteJar {
     private void executeBashCmd(
             String dcHost,
             int nodeId,
-            boolean isActive,
             boolean local,
             boolean linux
     ) {
         String jarCommand = "java -jar " + this.jarPath + " com.advos.MutualExclusionTesting -c " +
                 (local ? this.configFile : this.configFileOnDC) + " -id " + nodeId;
-        if(isActive) jarCommand += " -a";
 
         String sshCommand = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no " +
                 "-i " + this.sshKeyFile + " " + this.netid + "@" + dcHost + " '" + jarCommand + "'";
@@ -136,16 +130,6 @@ public class ExecuteJar {
 
     public void execute() {
         int n = config.getN();
-        int numActive = rand.nextInt(n) + 1;
-        List<Integer> activeNodes = new ArrayList<>();
-
-        for(int i = 0; i < numActive; i++) {
-            int num = rand.nextInt(n);
-            if(activeNodes.contains(num)) continue;
-            activeNodes.add(num);
-        }
-
-        logger.info(activeNodes.toString());
 
         ExecutorService executorService = Executors.newFixedThreadPool(n);
 
@@ -153,7 +137,7 @@ public class ExecuteJar {
             int nodeId = nodeInfo.getId();
             String dcHost = nodeInfo.getHost();
             executorService.submit(() ->
-                    executeBashCmd(dcHost, nodeId, activeNodes.contains(nodeId), this.local, this.linux));
+                    executeBashCmd(dcHost, nodeId, this.local, this.linux));
         }
 
         executorService.shutdown();

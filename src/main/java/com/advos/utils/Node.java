@@ -133,6 +133,12 @@ public class Node {
         for (int neighbourId: this.getNodeInfo().getNeighbors()) {
             this.send(neighbourId, new Terminate(this.getLamportClock(), this.getNodeInfo().getId()), false);
         }
+
+        while(this.getTerminateSize() != this.config.getN() - 1) {
+            MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
+        }
+
+        System.exit(0);
     }
 
     public void processRequestMsg(Message msg) {
@@ -145,11 +151,11 @@ public class Node {
 
     public void processTerminateMsg(Message msg) {
         this.addToTerminate(msg.getSourceNodeId());
-        if(this.getTerminateSize() == config.getN()) System.exit(0);
     }
 
     public void addToTerminate(int nodeId) {
         this.terminate.add(nodeId);
+        logger.info("Added node: [" + nodeId + "] to termination ready set");
     }
 
     public int getTerminateSize() {

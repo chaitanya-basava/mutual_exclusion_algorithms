@@ -104,8 +104,8 @@ public abstract class MutexManager {
     public final boolean checkCSPermission() {
         synchronized (node) {
             synchronized (this) {
-                for (boolean key : this.keys.values()) {
-                    if (!key) return false;
+                for (boolean flag : this.keys.values()) {
+                    if (!flag) return false;
                 }
 
                 this.setUsingCS(true);

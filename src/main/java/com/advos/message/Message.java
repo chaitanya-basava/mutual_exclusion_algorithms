@@ -1,5 +1,7 @@
 package com.advos.message;
 
+import com.advos.models.Config;
+
 import java.io.Serializable;
 
 public abstract class Message implements Serializable {
@@ -22,5 +24,9 @@ public abstract class Message implements Serializable {
     public String toString() {
         return "----clock:" + this.getClock() +
                 "----sourceNodeId:" + this.getSourceNodeId();
+    }
+
+    public static String msgPreProcess(String msg) {
+        return msg.split(Config.MESSAGE_DELIMITER)[0];
     }
 }

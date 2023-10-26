@@ -43,7 +43,7 @@ public class RoucairolCarvalhoManager extends MutexManager {
             }
         }
 
-        while(super.checkCSPermission()) {
+        while(!super.checkCSPermission()) {
             MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
         }
     }

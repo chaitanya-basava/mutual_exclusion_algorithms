@@ -11,7 +11,7 @@ public class Connection extends Message {
     }
 
     public static Connection deserialize(String serializedConnectionMessage) {
-        String[] connectionMessage = serializedConnectionMessage.split("----");
-        return new Connection(Integer.parseInt(connectionMessage[2].split(":")[1]));
+        String[] connectionMessage = Message.msgPreProcess(serializedConnectionMessage).split("----");
+        return new Connection(Integer.parseInt(connectionMessage[1].split(":")[1]));
     }
 }

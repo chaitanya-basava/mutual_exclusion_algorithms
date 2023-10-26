@@ -17,7 +17,7 @@ public class Launcher {
         String mainClassName = args[0];
         String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
 
-        if(mainClassName.equals("com.advos.MAPProtocol")) {
+        if(mainClassName.equals("com.advos.MutualExclusionTesting")) {
             new MutualExclusionTesting(mainArgs).execute();
         } else if(mainClassName.equals("com.advos.ExecuteJar")) {
             new ExecuteJar(mainArgs).execute();

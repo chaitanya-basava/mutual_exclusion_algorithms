@@ -9,7 +9,7 @@ public class Config {
     public static final int RETRY_CLIENT_CONNECTION_DELAY = 500;
     public static final int RETRY_MESSAGE_READING_DELAY = 500;
     public static final int RETRY_CS_PERMISSION_CHECK_DELAY = 2000;
-    public static final String MESSAGE_DELIMITER = "[end]";
+    public static final String MESSAGE_DELIMITER = "<end>";
     private final int n;
     private final int meanInterRequestDelay;
     private final int meanCSExecutionTime;
