@@ -7,6 +7,11 @@ import com.advos.utils.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileLock;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,6 +27,7 @@ public abstract class MutexManager {
     private final List<Integer> differedRequests;
     private final List<CriticalSectionDetails> allCSDetails;
     private CriticalSectionDetails csDetails;
+    private final AtomicInteger csSafetyCompromisedCount = new AtomicInteger(0);
 
     protected MutexManager(CriticalSection cs, Node node) {
         this.cs = cs;
@@ -34,8 +40,41 @@ public abstract class MutexManager {
     }
 
     public final void executeCS() {
-        this.cs.execute();
-        logger.info("Executed critical section - " + this.incrCsCounter());
+        synchronized(node) {
+            synchronized(this) {
+                // testing if CS is being accessed concurrently
+                File file = new File("cs_concurrency_test.txt");
+                FileOutputStream out = null;
+                FileLock lock = null;
+                try {
+                    out = new FileOutputStream(file);
+                    lock = out.getChannel().tryLock();
+
+                    if(lock == null) {
+                        logger.error("[FATAL] CS: " + this.getCsCounter() + " being executed concurrently");
+                        this.csSafetyCompromisedCount.incrementAndGet();
+                    } else {
+                        BufferedOutputStream bw = new BufferedOutputStream(out);
+                        bw.write(("CS being used by node - " + this.node.getNodeInfo().getId()).getBytes());
+                        this.cs.execute();
+                    }
+
+                } catch (IOException e) {
+                    logger.error(e.getMessage());
+                } finally {
+                    try {
+                        if(lock != null && lock.isValid()) {
+                            lock.release();
+                        }
+                        if(out != null) out.close();
+                    } catch (IOException e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+
+                logger.info("Executed critical section - " + this.incrCsCounter());
+            }
+        }
     }
 
     public abstract void csEnter();
@@ -149,5 +188,9 @@ public abstract class MutexManager {
 
     public final List<CriticalSectionDetails> getAllCSDetails() {
         return allCSDetails;
+    }
+
+    public final int getCsSafetyCompromisedCount() {
+        return this.csSafetyCompromisedCount.get();
     }
 }

@@ -64,6 +64,8 @@ public class CriticalSectionDetails {
 
     public void incrementMsgCount() { this.msgCount.incrementAndGet(); }
 
+    public void incrementMsgCount(int num) { this.msgCount.addAndGet(num); }
+
     public long getCSRequestTimestamp() { return csRequestTimestamp; }
 
     public long getCSExitTimestamp() { return csExitTimestamp; }

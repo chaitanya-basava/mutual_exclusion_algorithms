@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 public class MutualExclusionTesting {
     private static final Logger logger = LoggerFactory.getLogger(MutualExclusionTesting.class);
     private final Node node;
-    private final int nodeId;
     private static String configFile;
 
     private static CommandLine parseArgs(String[] args) {
@@ -46,7 +45,7 @@ public class MutualExclusionTesting {
     MutualExclusionTesting(String[] args) {
         CommandLine cmd = MutualExclusionTesting.parseArgs(args);
         boolean verbose = cmd.hasOption("v");
-        this.nodeId = Integer.parseInt(cmd.getOptionValue("nodeId"));
+        int nodeId = Integer.parseInt(cmd.getOptionValue("nodeId"));
         MutualExclusionTesting.configFile = cmd.getOptionValue("configFile");
 
         ConfigParser configParser = new ConfigParser(verbose);
@@ -57,15 +56,11 @@ public class MutualExclusionTesting {
         }
         Config config = configParser.getConfig();
 
-        this.node = new Node(config, config.getNode(this.nodeId));
+        this.node = new Node(config, config.getNode(nodeId));
     }
 
     public void execute() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Terminating node " + this.nodeId + "!!!");
-            this.cleanup();
-            logger.info("\n");
-        }, "Shutdown Listener"));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::cleanup, "Shutdown Listener"));
 
         logger.info("\n");
         this.node.startAlgorithm();

@@ -115,7 +115,7 @@ public class Channel {
     public void close() {
         if(!socket.isClosed() && socket.isConnected()) {
             try {
-                logger.info("Closing channel with " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+                // logger.info("Closing channel with " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                 socket.close();
                 in.close();
                 out.close();

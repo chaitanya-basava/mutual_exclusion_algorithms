@@ -143,6 +143,10 @@ public class Node {
         while(this.getTerminateSize() != this.config.getN() - 1) {
             MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
         }
+
+        logger.info("\nNumber of times CS safety got compromised (concurrent usage by multiple nodes): " +
+                this.mutexManager.getCsSafetyCompromisedCount() + " for NODE " +
+                this.getNodeInfo().getId() + "\nTermination condition met!!!\n");
     }
 
     public void saveCSUsageDetails() {
