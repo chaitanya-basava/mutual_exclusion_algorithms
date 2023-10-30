@@ -67,8 +67,12 @@ public class MutualExclusionTesting {
             logger.info("\n");
         }, "Shutdown Listener"));
 
+        logger.info("\n");
         this.node.startAlgorithm();
         this.node.stopAlgorithm();
+        this.node.saveCSUsageDetails();
+
+        System.exit(0);
     }
 
     public static void sleep(int milliseconds) {

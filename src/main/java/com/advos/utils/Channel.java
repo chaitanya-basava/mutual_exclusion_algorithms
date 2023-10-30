@@ -88,7 +88,11 @@ public class Channel {
                     }
                 }
             } catch (IOException | ClassCastException e) {
-                if(e.getMessage().equals("Stream closed") || e.getMessage().equals("Socket closed")) break;
+                try {
+                    if(e.getMessage().equals("Stream closed") || e.getMessage().equals("Socket closed")) break;
+                } catch (NullPointerException ignored) {
+                    continue;
+                }
                 logger.error(e.getMessage());
                 MutualExclusionTesting.sleep(Config.RETRY_MESSAGE_READING_DELAY);
             }

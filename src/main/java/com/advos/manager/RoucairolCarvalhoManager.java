@@ -4,6 +4,7 @@ import com.advos.MutualExclusionTesting;
 import com.advos.cs.CriticalSection;
 import com.advos.message.*;
 import com.advos.models.Config;
+import com.advos.models.CriticalSectionDetails;
 import com.advos.utils.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +30,16 @@ public class RoucairolCarvalhoManager extends MutexManager {
 
     @Override
     public void csEnter() {
-        super.setRequestingCS(true);
-
         synchronized(node) {
             synchronized(this) {
+                super.setCSDetails(node.getLamportClock());
+                super.setRequestingCS(true);
+
                 node.incrLamportClock();
-                super.setCSRequestTime(node.getLamportClock());
                 for (Map.Entry<Integer, Boolean> entry : super.getKeys().entrySet()) {
                     if(Boolean.FALSE.equals(entry.getValue())) {
                         node.send(entry.getKey(), new Request(node.getLamportClock(), node.getNodeInfo().getId()), false);
+                        this.getCurrentCSDetails().incrementMsgCount();
                     }
                 }
             }
@@ -46,26 +48,63 @@ public class RoucairolCarvalhoManager extends MutexManager {
         while(!super.checkCSPermission()) {
             MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
         }
+
+        super.setCSUseStartTime(node.getLamportClock());
     }
 
     @Override
     public void csLeave() {
         synchronized(node) {
             synchronized(this) {
+                super.closeCSDetails(node.getLamportClock());
                 super.setRequestingCS(false);
                 super.setUsingCS(false);
 
+                logger.info("Sending reply to " + super.getDifferedRequests().size()
+                        + " differed requests " + super.getDifferedRequests());
                 for(int differedNodeId: super.getDifferedRequests()) {
                     node.send(differedNodeId, new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
                     super.setKey(differedNodeId, false);
+                    this.getCurrentCSDetails().incrementMsgCount();
                 }
+                logger.info(super.getKeys().toString());
 
                 super.clearDifferedRequests();
 
-                logger.info("\nCompleted using CS " + super.getCsCounter() +
-                        " time(s)\nstart:" + super.getCSRequestTime() + " end: " + node.getLamportClock() + "\n");
+                CriticalSectionDetails prevCSDetails = super.addAndClearCurrentCSDetails();
+                logger.info("Critical Section Details: " + prevCSDetails.toString());
             }
         }
+    }
+
+    private void sendReplyAndRequest(Message msg) {
+        synchronized(node) {
+            synchronized(this) {
+                node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                node.send(msg.getSourceNodeId(), new Request(super.getCurrentCSDetails().getCSRequestTime(), node.getNodeInfo().getId()), true);
+
+                this.getCurrentCSDetails().incrementMsgCount();
+                this.getCurrentCSDetails().incrementMsgCount();
+
+                logger.info("[PASSING TO ANOTHER HIGHER PRIORITY NODE] " + msg.getSourceNodeId() +
+                        " (" + msg.getClock() + " " + super.getCurrentCSDetails().getCSRequestTime() + ")");
+                logger.info(super.getKeys().toString());
+            }
+        }
+    }
+
+    private void sendReply(Message msg) {
+        node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+        logger.info("[SEND REPLY TO ANOTHER NODE (not waiting on CS)] " + msg.getSourceNodeId());
+        logger.info(super.getKeys().toString());
+    }
+
+    private void differRequest(Message msg) {
+        super.setDifferedRequests(msg.getSourceNodeId());
+        logger.info("[DIFFERING REQUEST] of " + msg.getSourceNodeId() +
+                " (" + msg.getClock() + " " + super.getCurrentCSDetails().getCSRequestTime() + ") or " +
+                "CS is being used (true/false): " + super.getUsingCS());
+        logger.info(super.getKeys().toString());
     }
 
     @Override
@@ -73,27 +112,25 @@ public class RoucairolCarvalhoManager extends MutexManager {
         synchronized(node) {
             synchronized(this) {
                 if(super.getUsingCS()) {
-                    super.setDifferedRequests(msg.getSourceNodeId());
+                    this.differRequest(msg);
                     return;
                 }
 
                 if(!super.getRequestingCS()) {
-                    node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
+                    this.sendReply(msg);
                     return;
                 }
 
-                if(msg.getClock() < super.getCSRequestTime()) { // requesting node has lower clock (higher priority)
-                    node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
-                    node.send(msg.getSourceNodeId(), new Request(super.getCSRequestTime(), node.getNodeInfo().getId()), true);
-                } else if(msg.getClock() == super.getCSRequestTime()) { // same clock
+                if(msg.getClock() < super.getCurrentCSDetails().getCSRequestTime()) { // requesting node has lower clock (higher priority)
+                    this.sendReplyAndRequest(msg);
+                } else if(msg.getClock() == super.getCurrentCSDetails().getCSRequestTime()) { // same clock
                     if(msg.getSourceNodeId() < node.getNodeInfo().getId()) {
-                        node.send(msg.getSourceNodeId(), new Reply(node.getLamportClock(), node.getNodeInfo().getId()), true);
-                        node.send(msg.getSourceNodeId(), new Request(super.getCSRequestTime(), node.getNodeInfo().getId()), true);
+                        this.sendReplyAndRequest(msg);
                     } else {
-                        super.setDifferedRequests(msg.getSourceNodeId());
+                        this.differRequest(msg);
                     }
                 } else {
-                    super.setDifferedRequests(msg.getSourceNodeId());
+                    this.differRequest(msg);
                 }
             }
         }

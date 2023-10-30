@@ -96,6 +96,10 @@ public class Node {
         synchronized(this) {
             if(incrementClock) this.incrLamportClock();
             this.outChannels.get(destId).sendMessage(message);
+
+            if(message instanceof Reply) {
+                this.mutexManager.setKey(destId, false);
+            }
         }
     }
 
@@ -125,6 +129,8 @@ public class Node {
             this.mutexManager.csEnter();
             this.mutexManager.executeCS();
             this.mutexManager.csLeave();
+
+            MutualExclusionTesting.sleep(this.config.getMeanInterRequestDelay());
         }
     }
 
@@ -137,8 +143,10 @@ public class Node {
         while(this.getTerminateSize() != this.config.getN() - 1) {
             MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
         }
+    }
 
-        System.exit(0);
+    public void saveCSUsageDetails() {
+        logger.info(this.mutexManager.getAllCSDetails().toString());
     }
 
     public void processRequestMsg(Message msg) {
