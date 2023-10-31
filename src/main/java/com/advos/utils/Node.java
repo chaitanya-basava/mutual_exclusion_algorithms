@@ -7,10 +7,12 @@ import com.advos.manager.MutexManager;
 import com.advos.manager.RoucairolCarvalhoManager;
 import com.advos.message.*;
 import com.advos.models.Config;
+import com.advos.models.CriticalSectionDetails;
 import com.advos.models.NodeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -27,9 +29,11 @@ public class Node {
     private final Map<Integer, Channel> inChannels = new HashMap<>();
     private final Map<Integer, Channel> outChannels = new HashMap<>();
     private final Set<Integer> terminate = new HashSet<>();
+    private final String logPath;
 
-    public Node(Config config, NodeInfo nodeInfo) {
+    public Node(Config config, NodeInfo nodeInfo, String logPath) {
         this.config = config;
+        this.logPath = logPath;
         this.nodeInfo = nodeInfo;
         this.lamportClock = new AtomicLong(0);
 
@@ -150,7 +154,13 @@ public class Node {
     }
 
     public void saveCSUsageDetails() {
-        logger.info(this.mutexManager.getAllCSDetails().toString());
+        try(FileWriter writer = new FileWriter(this.logPath + this.getNodeInfo().getId() + ".out")) {
+            for(CriticalSectionDetails csDetails: this.mutexManager.getAllCSDetails()) {
+                writer.write(csDetails.toString());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void processRequestMsg(Message msg) {

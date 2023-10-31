@@ -26,8 +26,9 @@ public class MutualExclusionTesting {
         Option protocolOption = new Option("p", "protocol", true, "protocol to use");
         options.addOption(protocolOption);
 
-        Option verboseOption = new Option("v", "verbose", false, "Program verbosity");
-        options.addOption(verboseOption);
+        Option logPathOption = new Option("l", "log_file_path", true, "Path to log CS details");
+        logPathOption.setRequired(true);
+        options.addOption(logPathOption);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -44,11 +45,11 @@ public class MutualExclusionTesting {
 
     MutualExclusionTesting(String[] args) {
         CommandLine cmd = MutualExclusionTesting.parseArgs(args);
-        boolean verbose = cmd.hasOption("v");
         int nodeId = Integer.parseInt(cmd.getOptionValue("nodeId"));
+        String logPath = cmd.getOptionValue("log_file_path");
         MutualExclusionTesting.configFile = cmd.getOptionValue("configFile");
 
-        ConfigParser configParser = new ConfigParser(verbose);
+        ConfigParser configParser = new ConfigParser(false);
         try {
             configParser.parseConfig(MutualExclusionTesting.configFile);
         } catch (Exception e) {
@@ -56,7 +57,7 @@ public class MutualExclusionTesting {
         }
         Config config = configParser.getConfig();
 
-        this.node = new Node(config, config.getNode(nodeId));
+        this.node = new Node(config, config.getNode(nodeId), logPath);
     }
 
     public void execute() {

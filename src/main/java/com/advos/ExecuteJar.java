@@ -23,6 +23,7 @@ public class ExecuteJar {
     private final boolean local;
     private final boolean linux;
     private final Config config;
+    private final String logFilePath;
 
     private CommandLine parseArgs(String[] args) {
         Options options = new Options();
@@ -55,6 +56,10 @@ public class ExecuteJar {
         Option linuxOption = new Option("l", "linux", false, "Run program on linux machine");
         options.addOption(linuxOption);
 
+        Option logPathOption = new Option("lp", "log_file_path", true, "Path to log CS details");
+        logPathOption.setRequired(true);
+        options.addOption(logPathOption);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
 
@@ -75,7 +80,7 @@ public class ExecuteJar {
             boolean linux
     ) {
         String jarCommand = "java -jar " + this.jarPath + " com.advos.MutualExclusionTesting -c " +
-                (local ? this.configFile : this.configFileOnDC) + " -id " + nodeId;
+                (local ? this.configFile : this.configFileOnDC) + " -l " + this.logFilePath + " -id " + nodeId;
 
         String sshCommand = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no " +
                 "-i " + this.sshKeyFile + " " + this.netid + "@" + dcHost + " '" + jarCommand + "'";
@@ -111,6 +116,7 @@ public class ExecuteJar {
     ExecuteJar(String[] args) {
         CommandLine cmd = this.parseArgs(args);
         this.local = cmd.hasOption("lo");
+        this.logFilePath = cmd.getOptionValue("log_file_path");
         this.linux = System.getProperty("os.name").equalsIgnoreCase("linux");
         this.configFile = cmd.getOptionValue("configFile");
 

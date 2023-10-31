@@ -7,10 +7,7 @@ import com.advos.utils.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileLock;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,17 +42,27 @@ public abstract class MutexManager {
                 // testing if CS is being accessed concurrently
                 File file = new File("cs_concurrency_test.txt");
                 FileOutputStream out = null;
+                FileInputStream in = null;
                 FileLock lock = null;
                 try {
                     out = new FileOutputStream(file);
                     lock = out.getChannel().tryLock();
 
                     if(lock == null) {
-                        logger.error("[FATAL] CS: " + this.getCsCounter() + " being executed concurrently");
+                        in = new FileInputStream(file);
+                        InputStreamReader inputStreamReader = new InputStreamReader(in);
+                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+                        logger.error("[FATAL] CS: " + this.getCsCounter() +
+                                " being executed concurrently. " + bufferedReader.readLine());
+
+                        bufferedReader.close();
+                        inputStreamReader.close();
                         this.csSafetyCompromisedCount.incrementAndGet();
                     } else {
                         BufferedOutputStream bw = new BufferedOutputStream(out);
                         bw.write(("CS being used by node - " + this.node.getNodeInfo().getId()).getBytes());
+                        bw.close();
                         this.cs.execute();
                     }
 
@@ -67,6 +74,7 @@ public abstract class MutexManager {
                             lock.release();
                         }
                         if(out != null) out.close();
+                        if(in != null) in.close();
                     } catch (IOException e) {
                         logger.error(e.getMessage());
                     }
