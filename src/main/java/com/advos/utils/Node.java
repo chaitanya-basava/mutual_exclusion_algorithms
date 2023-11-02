@@ -9,6 +9,7 @@ import com.advos.message.*;
 import com.advos.models.Config;
 import com.advos.models.CriticalSectionDetails;
 import com.advos.models.NodeInfo;
+import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,12 +130,13 @@ public class Node {
     }
 
     public void startAlgorithm() {
+        ExponentialDistribution expDist = new ExponentialDistribution(this.config.getMeanInterRequestDelay());
         while(this.mutexManager.getCsCounter() < this.config.getMaxCsRequests()) {
+            MutualExclusionTesting.sleep((int) expDist.sample());
+
             this.mutexManager.csEnter();
             this.mutexManager.executeCS();
             this.mutexManager.csLeave();
-
-            MutualExclusionTesting.sleep(this.config.getMeanInterRequestDelay());
         }
     }
 
@@ -167,7 +169,7 @@ public class Node {
         this.mutexManager.processCSRequest(msg);
     }
 
-    public void processReplyMsg(Message msg) {
+    public void processReplyMsg(Reply msg) {
         this.mutexManager.processCSReply(msg);
     }
 

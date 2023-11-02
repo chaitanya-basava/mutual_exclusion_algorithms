@@ -2,7 +2,9 @@ package com.advos.manager;
 
 import com.advos.cs.CriticalSection;
 import com.advos.message.Message;
+import com.advos.message.Reply;
 import com.advos.models.CriticalSectionDetails;
+import com.advos.models.CriticalSectionPreviousRunDetails;
 import com.advos.utils.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,7 @@ public abstract class MutexManager {
     private final List<CriticalSectionDetails> allCSDetails;
     private CriticalSectionDetails csDetails;
     private final AtomicInteger csSafetyCompromisedCount = new AtomicInteger(0);
+    private CriticalSectionPreviousRunDetails previousCSDetails = new CriticalSectionPreviousRunDetails(-1, -1, 0, 0);
 
     protected MutexManager(CriticalSection cs, Node node) {
         this.cs = cs;
@@ -91,12 +94,13 @@ public abstract class MutexManager {
 
     public abstract void processCSRequest(Message msg);
 
-    public final void processCSReply(Message msg) {
+    public final void processCSReply(Reply msg) {
         synchronized(node) {
             synchronized(this) {
+                this.setPreviousCSDetails(msg.getPrevRun());
                 this.keys.put(msg.getSourceNodeId(), true);
-                logger.info("[RECEIVED CS REPLY FROM] " + msg.getSourceNodeId());
-                logger.info(this.getKeys().toString());
+//                logger.info("[RECEIVED CS REPLY FROM] " + msg.getSourceNodeId());
+//                logger.info(this.getKeys().toString());
             }
         }
     }
@@ -172,6 +176,7 @@ public abstract class MutexManager {
 
     public final void closeCSDetails(long exitClock) {
         this.csDetails.setCSExitTime(exitClock, true);
+        this.csDetails.setPreviousRunDetails(this.getPreviousCSDetails());
     }
 
     public final CriticalSectionDetails getCurrentCSDetails() {
@@ -179,7 +184,7 @@ public abstract class MutexManager {
     }
 
     public final CriticalSectionDetails addAndClearCurrentCSDetails() {
-        this.allCSDetails.add(new CriticalSectionDetails(
+        CriticalSectionDetails temp = new CriticalSectionDetails(
                 this.csDetails.getNodeId(),
                 this.csDetails.getCSRequestTime(),
                 this.csDetails.getCSExitTime(),
@@ -188,7 +193,9 @@ public abstract class MutexManager {
                 this.csDetails.getCSRequestTimestamp(),
                 this.csDetails.getCSExitTimestamp(),
                 this.csDetails.getCSExecuteTimestamp()
-        ));
+        );
+        temp.setPreviousRunDetails(this.getPreviousCSDetails());
+        this.allCSDetails.add(temp);
         this.csDetails = null;
 
         return this.allCSDetails.get(this.allCSDetails.size() - 1);
@@ -200,5 +207,15 @@ public abstract class MutexManager {
 
     public final int getCsSafetyCompromisedCount() {
         return this.csSafetyCompromisedCount.get();
+    }
+
+    public CriticalSectionPreviousRunDetails getPreviousCSDetails() {
+        return previousCSDetails;
+    }
+
+    public void setPreviousCSDetails(CriticalSectionPreviousRunDetails previousCSDetails) {
+        if(this.previousCSDetails != null && this.previousCSDetails.getTimestamp() < previousCSDetails.getTimestamp()) {
+            this.previousCSDetails = previousCSDetails;
+        }
     }
 }

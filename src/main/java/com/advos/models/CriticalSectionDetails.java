@@ -11,6 +11,7 @@ public class CriticalSectionDetails {
     private long csRequestTimestamp;
     private long csExitTimestamp;
     private long csExecuteTimestamp;
+    private CriticalSectionPreviousRunDetails previousRunDetails = null;
 
     public CriticalSectionDetails(int nodeId, long csRequestTime) {
         this.msgCount = new AtomicInteger(0);
@@ -74,6 +75,10 @@ public class CriticalSectionDetails {
 
     public int getNodeId() { return nodeId; }
 
+    public CriticalSectionPreviousRunDetails getPreviousRunDetails() { return previousRunDetails; }
+
+    public  void setPreviousRunDetails(CriticalSectionPreviousRunDetails previousRunDetails) { this.previousRunDetails = previousRunDetails; }
+
     @Override
     public String toString() {
         return "Node Id:" + this.getNodeId() +
@@ -84,12 +89,15 @@ public class CriticalSectionDetails {
                 "----CS execution end timestamp:" + this.getCSExitTimestamp() +
                 "----CS execution start time:" + this.getCSExecuteTime() +
                 "----CS execution start timestamp:" + this.getCSExecuteTimestamp() +
-                "----Response Time:" + (this.getCSExitTimestamp() - this.getCSRequestTimestamp()) + " ms\n";
+                "----Response Time:" + (this.getCSExitTimestamp() - this.getCSRequestTimestamp()) + " ms" +
+                "----" + this.getPreviousRunDetails() +
+                "----" + (this.getCSExecuteTimestamp() - this.getPreviousRunDetails().getTimestamp()) + "\n";
     }
 
+    /*
     public static CriticalSectionDetails deserialize(String str) {
         String[] msg = str.split("----");
-        return new CriticalSectionDetails(
+        CriticalSectionDetails temp = new CriticalSectionDetails(
                 Integer.parseInt(msg[0].split(":")[1]),
                 Long.parseLong(msg[2].split(":")[1]),
                 Long.parseLong(msg[3].split(":")[1]),
@@ -99,5 +107,8 @@ public class CriticalSectionDetails {
                 Long.parseLong(msg[5].split(":")[1]),
                 Long.parseLong(msg[7].split(":")[1])
         );
+        temp.setPreviousRunDetails(CriticalSectionPreviousRunDetails.deserialize(msg[9]));
+        return temp;
     }
+    */
 }
