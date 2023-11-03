@@ -1,9 +1,7 @@
 package com.advos.manager;
 
-import com.advos.MutualExclusionTesting;
 import com.advos.cs.CriticalSection;
 import com.advos.message.*;
-import com.advos.models.Config;
 import com.advos.models.CriticalSectionDetails;
 import com.advos.models.CriticalSectionPreviousRunDetails;
 import com.advos.utils.Node;
@@ -46,9 +44,7 @@ public class RoucairolCarvalhoManager extends MutexManager {
             }
         }
 
-        while(!super.checkCSPermission()) {
-            MutualExclusionTesting.sleep(Config.RETRY_CS_PERMISSION_CHECK_DELAY);
-        }
+        while(!super.checkCSPermission());
 
         super.setCSUseStartTime(node.getLamportClock());
     }
@@ -60,8 +56,6 @@ public class RoucairolCarvalhoManager extends MutexManager {
                 super.closeCSDetails(node.getLamportClock());
                 super.setRequestingCS(false);
                 super.setUsingCS(false);
-
-                this.getCurrentCSDetails().incrementMsgCount(super.getDifferedRequests().size());
 
                 CriticalSectionPreviousRunDetails newPrevRun = new CriticalSectionPreviousRunDetails(
                         node.getNodeInfo().getId(),
@@ -76,6 +70,7 @@ public class RoucairolCarvalhoManager extends MutexManager {
                     node.send(differedNodeId,
                             new Reply(node.getLamportClock(), node.getNodeInfo().getId(), newPrevRun), true);
                     super.setKey(differedNodeId, false);
+                    this.getCurrentCSDetails().incrementMsgCount(1);
                 }
 //                logger.info(super.getKeys().toString());
 

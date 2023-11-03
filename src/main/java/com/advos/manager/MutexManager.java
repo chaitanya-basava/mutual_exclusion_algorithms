@@ -40,52 +40,48 @@ public abstract class MutexManager {
     }
 
     public final void executeCS() {
-        synchronized(node) {
-            synchronized(this) {
-                // testing if CS is being accessed concurrently
-                File file = new File("cs_concurrency_test.txt");
-                FileOutputStream out = null;
-                FileInputStream in = null;
-                FileLock lock = null;
-                try {
-                    out = new FileOutputStream(file);
-                    lock = out.getChannel().tryLock();
+        // testing if CS is being accessed concurrently
+        File file = new File("cs_concurrency_test.txt");
+        FileOutputStream out = null;
+        FileInputStream in = null;
+        FileLock lock = null;
+        try {
+            out = new FileOutputStream(file);
+            lock = out.getChannel().tryLock();
 
-                    if(lock == null) {
-                        in = new FileInputStream(file);
-                        InputStreamReader inputStreamReader = new InputStreamReader(in);
-                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            if(lock == null) {
+                in = new FileInputStream(file);
+                InputStreamReader inputStreamReader = new InputStreamReader(in);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
 
-                        logger.error("[FATAL] CS: " + this.getCsCounter() +
-                                " being executed concurrently. " + bufferedReader.readLine());
+                logger.error("[FATAL] CS: " + this.getCsCounter() +
+                        " being executed concurrently. " + bufferedReader.readLine());
 
-                        bufferedReader.close();
-                        inputStreamReader.close();
-                        this.csSafetyCompromisedCount.incrementAndGet();
-                    } else {
-                        BufferedOutputStream bw = new BufferedOutputStream(out);
-                        bw.write(("CS being used by node - " + this.node.getNodeInfo().getId()).getBytes());
-                        bw.close();
-                        this.cs.execute();
-                    }
+                bufferedReader.close();
+                inputStreamReader.close();
+                this.csSafetyCompromisedCount.incrementAndGet();
+            } else {
+                BufferedOutputStream bw = new BufferedOutputStream(out);
+                bw.write(("CS being used by node - " + this.node.getNodeInfo().getId()).getBytes());
+                bw.close();
+                this.cs.execute();
+            }
 
-                } catch (IOException e) {
-                    logger.error(e.getMessage());
-                } finally {
-                    try {
-                        if(lock != null && lock.isValid()) {
-                            lock.release();
-                        }
-                        if(out != null) out.close();
-                        if(in != null) in.close();
-                    } catch (IOException e) {
-                        logger.error(e.getMessage());
-                    }
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        } finally {
+            try {
+                if(lock != null && lock.isValid()) {
+                    lock.release();
                 }
-
-                logger.info("Executed critical section - " + this.incrCsCounter());
+                if(out != null) out.close();
+                if(in != null) in.close();
+            } catch (IOException e) {
+                logger.error(e.getMessage());
             }
         }
+
+        logger.info("Executed critical section - " + this.incrCsCounter());
     }
 
     public abstract void csEnter();
@@ -126,6 +122,7 @@ public abstract class MutexManager {
     }
 
     public final List<Integer> getDifferedRequests() {
+        Collections.shuffle(differedRequests);
         return differedRequests;
     }
 
@@ -194,7 +191,7 @@ public abstract class MutexManager {
                 this.csDetails.getCSExitTimestamp(),
                 this.csDetails.getCSExecuteTimestamp()
         );
-        temp.setPreviousRunDetails(this.getPreviousCSDetails());
+        temp.setPreviousRunDetails(this.csDetails.getPreviousRunDetails());
         this.allCSDetails.add(temp);
         this.csDetails = null;
 
@@ -214,7 +211,7 @@ public abstract class MutexManager {
     }
 
     public void setPreviousCSDetails(CriticalSectionPreviousRunDetails previousCSDetails) {
-        if(this.previousCSDetails != null && this.previousCSDetails.getTimestamp() < previousCSDetails.getTimestamp()) {
+        if(this.previousCSDetails.getTimestamp() < previousCSDetails.getTimestamp()) {
             this.previousCSDetails = previousCSDetails;
         }
     }

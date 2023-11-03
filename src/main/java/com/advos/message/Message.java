@@ -2,9 +2,7 @@ package com.advos.message;
 
 import com.advos.models.Config;
 
-import java.io.Serializable;
-
-public abstract class Message implements Serializable {
+public abstract class Message {
     private final long clock;
     private final int sourceNodeId;
 
