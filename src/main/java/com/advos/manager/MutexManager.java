@@ -54,19 +54,20 @@ public abstract class MutexManager {
                 InputStreamReader inputStreamReader = new InputStreamReader(in);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
 
-                logger.error("[FATAL] CS: " + this.getCsCounter() +
+                logger.error("[FATALITY] CS: " + this.getCsCounter() +
                         " being executed concurrently. " + bufferedReader.readLine());
 
                 bufferedReader.close();
                 inputStreamReader.close();
                 this.csSafetyCompromisedCount.incrementAndGet();
             } else {
+                this.setCSUseStartTime(node.getLamportClock());
+                this.cs.execute();
+                this.closeCSDetails(node.getLamportClock());
                 BufferedOutputStream bw = new BufferedOutputStream(out);
                 bw.write(("CS being used by node - " + this.node.getNodeInfo().getId()).getBytes());
                 bw.close();
-                this.cs.execute();
             }
-
         } catch (IOException e) {
             logger.error(e.getMessage());
         } finally {

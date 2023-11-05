@@ -8,7 +8,7 @@ config_file_name="config"
 
 scp -i "$rsa_path" "./main.py" "$net_id@dc01:$config_base_path/main.py"
 
-dirs=$(ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$rsa_path" "$net_id@dc01" "find $config_base_path/$config_file_name/ -maxdepth 1 -type d")
+dirs=$(ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$rsa_path" "$net_id@dc01" "find $config_base_path/$config_file_name/ -maxdepth 1 -type d | sort")
 
 for dir in $dirs
 do

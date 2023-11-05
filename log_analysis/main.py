@@ -16,7 +16,7 @@ class NodeData:
         self.prev_run_details = prev_run_details
         self.response_time = cs_execution_end_timestamp - cs_req_start_timestamp
         self.cs_execution_time = cs_execution_end_timestamp - cs_execution_start_timestamp
-        self.synchronous_delay = cs_execution_start_timestamp - self.prev_run_details.prev_cs_end_timestamp
+        self.synchronous_delay = abs(cs_execution_start_timestamp - self.prev_run_details.prev_cs_end_timestamp)
         self.cs_req_start_time = cs_req_start_time
         self.cs_execution_start_time = cs_execution_start_time
         self.cs_execution_end_time = cs_execution_end_time
@@ -162,6 +162,17 @@ if __name__ == '__main__':
     avg_msg_complexity = sum(node_data.messages_exchanged for node_data in node_data_list) / len(node_data_list)
     avg_response_time = sum(node_data.response_time for node_data in node_data_list) / len(node_data_list)
 
-    print(f"System Throughput: {system_throughput} requests per second")
-    print(f"Average Message Complexity: {avg_msg_complexity} messages per CS")
-    print(f"Average Response Time: {avg_response_time} milliseconds per CS")
+    config = directory.split('/')[-2]
+    run = int(directory.split('/')[-1])
+
+    s = f"Run: {run}\n"
+    s += f"System Throughput: {system_throughput} requests per second\n"
+    s += f"Average Message Complexity: {avg_msg_complexity} messages per CS\n"
+    s += f"Average Response Time: {avg_response_time} milliseconds per CS\n"
+
+    file_name = f"./{config}.txt"
+    with open(file_name, 'w' if run == 1 else 'a') as file:
+        file.write(s)
+
+    with open(file_name, 'r') as file:
+        print(file.read())
