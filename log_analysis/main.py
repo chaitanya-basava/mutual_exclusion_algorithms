@@ -82,24 +82,19 @@ def parse_data(_line):
 def check_for_intersections(data_list):
     count = 0
 
-    # Sort the list based on the cs_execution_start_timestamp
-    sorted_data = sorted(data_list, key=lambda x: int(x.cs_execution_start_timestamp))
+    for i in range(len(data_list)):
+        for j in range(i + 1, len(data_list)):
+            start1 = int(data_list[i].cs_execution_start_timestamp)
+            end1 = int(data_list[i].cs_execution_end_timestamp)
+            start2 = int(data_list[j].cs_execution_start_timestamp)
+            end2 = int(data_list[j].cs_execution_end_timestamp)
 
-    # Initialize the end time of the previous interval
-    prev_end_time = -1
-
-    for i, data in enumerate(sorted_data):
-        start_time = int(data.cs_execution_start_timestamp)
-        end_time = int(data.cs_execution_end_timestamp)
-
-        # Check for intersection with the previous interval
-        if start_time < prev_end_time:
-            print(f"Intersection found at Node {data.node_id} starting at {start_time}"
-                  f" - cs count: {data.prev_run_details.cs_count}")
-            count += 1
-
-        # Update the end time of the previous interval to the max end time seen so far
-        prev_end_time = max(prev_end_time, end_time)
+            # Check if the current pair of intervals intersect
+            if (abs(start1 - end2) > 1 and start1 < end2) and (abs(start2 - end1) > 1 and start2 < end1):
+                count += 1
+                print(f"Intersection found between Node {data_list[i].node_id} "
+                      f"({start1} to {end1}) and Node {data_list[j].node_id} "
+                      f"({start2} to {end2})")
 
     return count
 
@@ -139,16 +134,18 @@ def calculate_throughput(data_list):
 
 if __name__ == '__main__':
     directory = sys.argv[1]
+    node_data_list = []
     out_files = [f for f in os.listdir(directory) if f.endswith('.out')]
 
-    filename = 'sample.txt'
-    node_data_list = []
-    with open(filename, 'r') as file:
-        for line in file:
-            node_data_object = parse_data(line)
-            print(node_data_object)
+    print(out_files)
 
-            node_data_list.append(node_data_object)
+    for filename in out_files:
+        with open(f"{directory}/{filename}", 'r') as file:
+            for line in file:
+                node_data_object = parse_data(line)
+                print(node_data_object)
+
+                node_data_list.append(node_data_object)
 
     print(f"Found {check_for_intersections(node_data_list)} time(s) CS safety got violated")
     print("------------------------------\n")
