@@ -5,7 +5,9 @@ import sys
 
 class NodeData:
     def __init__(self, node_id, messages_exchanged, cs_req_start_timestamp,
-                 cs_execution_start_timestamp, cs_execution_end_timestamp, prev_run_details):
+                 cs_execution_start_timestamp, cs_execution_end_timestamp, prev_run_details,
+                 cs_req_start_time,
+                 cs_execution_start_time, cs_execution_end_time):
         self.node_id = node_id
         self.messages_exchanged = messages_exchanged
         self.cs_req_start_timestamp = cs_req_start_timestamp
@@ -15,6 +17,9 @@ class NodeData:
         self.response_time = cs_execution_end_timestamp - cs_req_start_timestamp
         self.cs_execution_time = cs_execution_end_timestamp - cs_execution_start_timestamp
         self.synchronous_delay = cs_execution_start_timestamp - self.prev_run_details.prev_cs_end_timestamp
+        self.cs_req_start_time = cs_req_start_time
+        self.cs_execution_start_time = cs_execution_start_time
+        self.cs_execution_end_time = cs_execution_end_time
 
     def __str__(self):
         s = f"NodeId: {self.node_id}\n"
@@ -74,6 +79,9 @@ def parse_data(_line):
         cs_execution_start_timestamp=int(data_dict.get('CS execution start timestamp')),
         cs_execution_end_timestamp=int(data_dict.get('CS execution end timestamp')),
         prev_run_details=prev_run_details,
+        cs_req_start_time=int(data_dict.get('CS request start time')),
+        cs_execution_start_time=int(data_dict.get('CS execution start time')),
+        cs_execution_end_time=int(data_dict.get('CS execution end time')),
     )
 
     return node_data
@@ -84,13 +92,13 @@ def check_for_intersections(data_list):
 
     for i in range(len(data_list)):
         for j in range(i + 1, len(data_list)):
-            start1 = int(data_list[i].cs_execution_start_timestamp)
-            end1 = int(data_list[i].cs_execution_end_timestamp)
-            start2 = int(data_list[j].cs_execution_start_timestamp)
-            end2 = int(data_list[j].cs_execution_end_timestamp)
+            start1 = int(data_list[i].cs_execution_start_time)
+            end1 = int(data_list[i].cs_execution_end_time)
+            start2 = int(data_list[j].cs_execution_start_time)
+            end2 = int(data_list[j].cs_execution_end_time)
 
             # Check if the current pair of intervals intersect
-            if (abs(start1 - end2) > 1 and start1 < end2) and (abs(start2 - end1) > 1 and start2 < end1):
+            if start1 < end2 and start2 < end1:
                 count += 1
                 print(f"Intersection found between Node {data_list[i].node_id} "
                       f"({start1} to {end1}) and Node {data_list[j].node_id} "
