@@ -22,20 +22,20 @@ class NodeData:
         self.cs_execution_end_time = cs_execution_end_time
 
     def __str__(self):
-        s = f"NodeId: {self.node_id}\n"
-        s += f"Messages Exchanged: {self.messages_exchanged}\n"
-        s += f"CS Request Start Timestamp: {self.cs_req_start_timestamp}\n"
-        s += f"CS Execution Start Timestamp: {self.cs_execution_start_timestamp}\n"
-        s += f"CS Execution End Timestamp: {self.cs_execution_end_timestamp}\n"
-        s += f"Previous Run Details - NodeId: {self.prev_run_details.node_id}\n"
-        s += f"Previous Run Details - CS Count: {self.prev_run_details.cs_count}\n"
-        s += f"Previous Run Details - Prev CS End Timestamp: {self.prev_run_details.prev_cs_end_timestamp}\n"
-        s += f"Response Time: {self.response_time}\n"
-        s += f"CS Execution Time: {self.cs_execution_time}\n"
-        s += f"Synchronous Delay: {self.synchronous_delay}\n"
-        s += "------------------------------\n"
+        t = f"NodeId: {self.node_id}\n"
+        t += f"Messages Exchanged: {self.messages_exchanged}\n"
+        t += f"CS Request Start Timestamp: {self.cs_req_start_timestamp}\n"
+        t += f"CS Execution Start Timestamp: {self.cs_execution_start_timestamp}\n"
+        t += f"CS Execution End Timestamp: {self.cs_execution_end_timestamp}\n"
+        t += f"Previous Run Details - NodeId: {self.prev_run_details.node_id}\n"
+        t += f"Previous Run Details - CS Count: {self.prev_run_details.cs_count}\n"
+        t += f"Previous Run Details - Prev CS End Timestamp: {self.prev_run_details.prev_cs_end_timestamp}\n"
+        t += f"Response Time: {self.response_time}\n"
+        t += f"CS Execution Time: {self.cs_execution_time}\n"
+        t += f"Synchronous Delay: {self.synchronous_delay}\n"
+        t += "------------------------------\n"
 
-        return s
+        return t
 
 
 class PrevRunDetails:
