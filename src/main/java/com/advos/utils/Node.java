@@ -132,7 +132,9 @@ public class Node {
     public void startAlgorithm() {
         ExponentialDistribution expDist = new ExponentialDistribution(this.config.getMeanInterRequestDelay());
         while(this.mutexManager.getCsCounter() < this.config.getMaxCsRequests()) {
-            MutualExclusionTesting.sleep((int) expDist.sample());
+            int t = (int) expDist.sample();
+            logger.info("Waiting for " + t + " ms");
+            MutualExclusionTesting.sleep(t);
 
             this.mutexManager.csEnter();
             this.mutexManager.executeCS();

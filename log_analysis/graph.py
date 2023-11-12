@@ -6,7 +6,8 @@ from collections import defaultdict
 
 def process_file(file_path):
     pattern = (r"Run: (\d+)|System Throughput: ([\d.]+) requests per second|Average Message Complexity: ([\d.]+) "
-               r"messages per CS|Average Response Time: ([\d.]+) milliseconds per CS|Messages: (.+)")
+               r"messages per CS|Average Response Time: ([\d.]+) milliseconds per CS|Messages: (.+)|"
+               r"Average Synchronization Delay: ([\d.]+) milliseconds|SyncDelays: (.+)")
 
     data = defaultdict(dict)
     with open(file_path, 'r') as file:
@@ -24,11 +25,16 @@ def process_file(file_path):
                 elif match.group(5):  # Messages
                     messages = list(map(int, match.group(5).split()))
                     data[current_run]['Messages'] = messages
+                elif match.group(6):  # Average Synchronization Delay
+                    data[current_run]['Average Synchronization Delay'] = float(match.group(6))
+                elif match.group(7):  # Sync delays
+                    delays = list(map(int, match.group(7).split()))
+                    data[current_run]['SyncDelays'] = delays
 
     return data
 
 
-def save_line_charts(_experiment_data):
+def save_line_charts(_experiment_data, xlabel='mean CS execution time'):
     # Extracting metrics from the data
     avg_throughput = [np.mean([run_data['System Throughput'] for run_data in exp_data.values()])
                       for exp_data in _experiment_data]
@@ -36,6 +42,8 @@ def save_line_charts(_experiment_data):
                               for exp_data in _experiment_data]
     avg_response_time = [np.mean([run_data['Average Response Time'] for run_data in exp_data.values()])
                          for exp_data in _experiment_data]
+    avg_synch_delay = [np.mean([run_data['Average Synchronization Delay'] for run_data in exp_data.values()])
+                       for exp_data in _experiment_data]
 
     exps = [10, 100, 250, 500, 750, 1000]
 
@@ -43,30 +51,45 @@ def save_line_charts(_experiment_data):
     plt.figure(figsize=(15, 5))
 
     # System Throughput Line Chart
-    plt.subplot(1, 3, 1)
+    plt.subplot(2, 1, 1)
     plt.plot(exps, avg_throughput, marker='o', color='b')
     plt.title('System Throughput (requests per second)')
-    plt.xlabel('mean CS execution time')
+    plt.xlabel(xlabel)
     plt.ylabel('Throughput')
 
     # Average Message Complexity Line Chart
-    plt.subplot(1, 3, 2)
+    plt.subplot(2, 1, 2)
     plt.plot(exps, avg_message_complexity, marker='o', color='g')
     plt.title('Average Message Complexity (messages per CS)')
-    plt.xlabel('mean CS execution time')
+    plt.xlabel(xlabel)
     plt.ylabel('Message Complexity')
-
-    # Average Response Time Line Chart
-    plt.subplot(1, 3, 3)
-    plt.plot(exps, avg_response_time, marker='o', color='r')
-    plt.title('Average Response Time (per CS)')
-    plt.xlabel('mean CS execution time')
-    plt.ylabel('Response Time')
 
     plt.subplots_adjust(hspace=0.5)
 
     # Save the figure
-    plt.savefig('./results/line_charts.png')
+    plt.savefig('./results/line_charts_1_d.png')
+    plt.close()
+
+    plt.figure(figsize=(15, 5))
+
+    # Average Response Time Line Chart
+    plt.subplot(2, 1, 1)
+    plt.plot(exps, avg_response_time, marker='o', color='r')
+    plt.title('Average Response Time (per CS)')
+    plt.xlabel(xlabel)
+    plt.ylabel('Response Time')
+
+    # Average Sync Delay Line Chart
+    plt.subplot(2, 1, 2)
+    plt.plot(exps, avg_synch_delay, marker='o', color='r')
+    plt.title('Average Synchronization Delay')
+    plt.xlabel(xlabel)
+    plt.ylabel('Synchronization Delay')
+
+    plt.subplots_adjust(hspace=0.5)
+
+    # Save the figure
+    plt.savefig('./results/line_charts_2_d.png')
     plt.close()
 
 
@@ -74,17 +97,8 @@ def save_box_plots(_experiment_data):
     # Creating the box plots
     plt.figure(figsize=(15, 10))
 
-    # System Throughput Box Plot
-    plt.subplot(4, 1, 1)
-    throughput_data = [[run_data['System Throughput'] for run_data in exp_data.values()]
-                       for exp_data in _experiment_data]
-    plt.boxplot(throughput_data, patch_artist=True)
-    plt.title('System Throughput per Experiment (requests per second)')
-    plt.xlabel('Experiment')
-    plt.ylabel('Throughput')
-
     # Message Complexity Box Plot
-    plt.subplot(4, 1, 2)
+    plt.subplot(2, 1, 1)
     message_complexity_data = []
     for exp_data in _experiment_data:
         te = []
@@ -98,35 +112,31 @@ def save_box_plots(_experiment_data):
     plt.xlabel('Experiment')
     plt.ylabel('Message Complexity')
 
-    # Message Complexity Box Plot
-    plt.subplot(4, 1, 3)
-    message_complexity_data = [[run_data['Average Message Complexity'] for run_data in exp_data.values()]
-                               for exp_data in _experiment_data]
-    plt.boxplot(message_complexity_data, patch_artist=True)
-    plt.title('Average Message Complexity (messages per CS)')
-    plt.xlabel('Experiment')
-    plt.ylabel('Avg Message Complexity')
+    plt.subplot(2, 1, 2)
+    sync_delay_data = []
+    for exp_data in _experiment_data:
+        te = []
+        for run_data in exp_data.values():
+            te += run_data['SyncDelays']
 
-    # Average Response Time Box Plot
-    plt.subplot(4, 1, 4)
-    response_time_data = [[run_data['Average Response Time'] for run_data in exp_data.values()]
-                          for exp_data in _experiment_data]
-    plt.boxplot(response_time_data, patch_artist=True)
-    plt.title('Average Response Time per Experiment (per CS)')
+        sync_delay_data.append(te)
+
+    plt.boxplot(sync_delay_data, patch_artist=True)
+    plt.title('Synchronization Delays')
     plt.xlabel('Experiment')
-    plt.ylabel('Response Time')
+    plt.ylabel('Synchronization Delay')
 
     plt.subplots_adjust(hspace=0.5)
 
     # Save the figure
-    plt.savefig('./results/box_plots.png')
+    plt.savefig('./results/box_plots_d.png')
     plt.close()
 
 
 experiment_data = []
 
 for i in range(0, 6):
-    experiment_data.append(process_file(f"./results/config{i}.txt" if i != 0 else "./results/config.txt"))
+    experiment_data.append(process_file(f"./results/configd_{i}.txt" if i != 0 else "./results/config.txt"))
 
-save_line_charts(experiment_data)
+save_line_charts(experiment_data, 'mean inter req delay')
 save_box_plots(experiment_data)

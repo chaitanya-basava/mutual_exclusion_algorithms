@@ -32,7 +32,7 @@ class NodeData:
         t += f"Previous Run Details - Prev CS End Timestamp: {self.prev_run_details.prev_cs_end_timestamp}\n"
         t += f"Response Time: {self.response_time}\n"
         t += f"CS Execution Time: {self.cs_execution_time}\n"
-        t += f"Synchronous Delay: {self.synchronous_delay}\n"
+        t += f"Synchronization Delay: {self.synchronous_delay}\n"
         t += "------------------------------\n"
 
         return t
@@ -161,6 +161,8 @@ if __name__ == '__main__':
     system_throughput = calculate_throughput(node_data_list)
     avg_msg_complexity = sum(node_data.messages_exchanged for node_data in node_data_list) / len(node_data_list)
     avg_response_time = sum(node_data.response_time for node_data in node_data_list) / len(node_data_list)
+    avg_synchronous_delay = sum(node_data.synchronous_delay for node_data in node_data_list
+                                if node_data.prev_run_details.cs_count != -1) / len(node_data_list)
 
     config = directory.split('/')[-2]
     run = int(directory.split('/')[-1])
@@ -170,6 +172,9 @@ if __name__ == '__main__':
     s += f"Average Message Complexity: {avg_msg_complexity} messages per CS\n"
     s += f"Average Response Time: {avg_response_time} milliseconds per CS\n"
     s += "Messages: " + " ".join([str(node_data.messages_exchanged) for node_data in node_data_list]) + "\n"
+    s += "Average Synchronization Delay: " + str(avg_synchronous_delay) + " milliseconds\n"
+    s += "SyncDelays: " + " ".join([str(node_data.synchronous_delay) for node_data in node_data_list
+                                  if node_data.prev_run_details.cs_count != -1]) + "\n"
 
     file_name = f"./{config}.txt"
     with open(file_name, 'w' if run == 1 else 'a') as file:
