@@ -174,7 +174,7 @@ if __name__ == '__main__':
     s += "Messages: " + " ".join([str(node_data.messages_exchanged) for node_data in node_data_list]) + "\n"
     s += "Average Synchronization Delay: " + str(avg_synchronous_delay) + " milliseconds\n"
     s += "SyncDelays: " + " ".join([str(node_data.synchronous_delay) for node_data in node_data_list
-                                  if node_data.prev_run_details.cs_count != -1]) + "\n"
+                                    if node_data.prev_run_details.cs_count != -1]) + "\n"
 
     file_name = f"./{config}.txt"
     with open(file_name, 'w' if run == 1 else 'a') as file:
