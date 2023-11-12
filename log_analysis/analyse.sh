@@ -4,7 +4,7 @@ rsa_path="~/.ssh/id_rsa_dc"
 net_id="sxb220302"
 config_base_path="/home/012/s/sx/$net_id"
 
-config_file_name="config"
+config_file_name="config5"
 
 scp -i "$rsa_path" "./main.py" "$net_id@dc01:$config_base_path/main.py"
 

@@ -151,7 +151,7 @@ if __name__ == '__main__':
         with open(f"{directory}/{filename}", 'r') as file:
             for line in file:
                 node_data_object = parse_data(line)
-                print(node_data_object)
+                # print(node_data_object)
 
                 node_data_list.append(node_data_object)
 
@@ -169,6 +169,7 @@ if __name__ == '__main__':
     s += f"System Throughput: {system_throughput} requests per second\n"
     s += f"Average Message Complexity: {avg_msg_complexity} messages per CS\n"
     s += f"Average Response Time: {avg_response_time} milliseconds per CS\n"
+    s += "Messages: " + " ".join([str(node_data.messages_exchanged) for node_data in node_data_list]) + "\n"
 
     file_name = f"./{config}.txt"
     with open(file_name, 'w' if run == 1 else 'a') as file:
