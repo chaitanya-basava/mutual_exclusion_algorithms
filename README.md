@@ -2,12 +2,13 @@
 
 ## Roucairol and Carvalho’s algorithm
 
-This is the implementation of the Roucairol and Carvalho's  distributed
-mutual exclusion algorithm protocol for Advanced OS course (CS 6378).
+This is the implementation of the `Roucairol and Carvalho` and `Ricart Agarwal` distributed
+mutual exclusion algorithms, implemented as course project for Advanced OS (CS 6378).
+
 It makes use of Lamport’s scalar clock for timestamping the application messages,
 which are the CS request messages in this application.
 
-More micro details about the implementation can be found in the project description [here](project2.pdf).
+More micro details about the implementation requirements can be found in the project description [here](project2.pdf).
 
 ## Requirements
 1. java@1.8.0_341
@@ -52,3 +53,21 @@ bash cleanup.sh sxb220302 "~/.ssh/id_rsa_dc"
 ```
 
 **NOTE:** The termination detection of the protocol should take care of this step though.
+
+## Application execution
+
+You may directly execute each node of the application manually using the following command
+```
+java -jar mutual_exclusion_algorithms-1.0.jar com.advos.MutualExclusionTesting -c <config_file_path> -l <log_path> -id <node_id> -p <1 or 2>
+```
+
+**NOTE:** The `hostname` and `port` are specified in the config file!
+
+Protocol number:
+1. Roucairol Carvalho
+2. Ricart Agarwala
+
+**Example:**
+```
+java -jar /home/012/s/sx/sxb220302/adv_os_proj_1/mutual_exclusion_algorithms-1.0.jar com.advos.MutualExclusionTesting -c /home/012/s/sx/sxb220302/adv_os_proj_1/config.txt -l /home/012/s/sx/sxb220302/adv_os_proj_1/../config5/9/ -id 9 -p 2
+```
