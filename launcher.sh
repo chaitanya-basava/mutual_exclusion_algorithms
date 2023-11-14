@@ -36,6 +36,6 @@ ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$rsa_path" "
 scp -i "$rsa_path" "$config_file" "$net_id@dc01:$remote_proj_path/config.txt"
 scp -i "$rsa_path" "$jar_path" "$net_id@dc01:$remote_proj_path/mutual_exclusion_algorithms-1.0.jar"
 
-java -jar "$jar_path" com.advos.ExecuteJar -c "$config_file" -id "$net_id" -jar "$remote_proj_path/mutual_exclusion_algorithms-1.0.jar" -rc "$remote_proj_path/config.txt" -ssh "$rsa_path" -lp "$log_file_path/"
+java -jar "$jar_path" com.advos.ExecuteJar -c "$config_file" -id "$net_id" -jar "$remote_proj_path/mutual_exclusion_algorithms-1.0.jar" -rc "$remote_proj_path/config.txt" -ssh "$rsa_path" -lp "$log_file_path/" -p 2
 
 exit 0

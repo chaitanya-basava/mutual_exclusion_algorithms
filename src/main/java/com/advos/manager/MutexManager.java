@@ -87,7 +87,7 @@ public abstract class MutexManager {
 
     public abstract void csEnter();
 
-    public abstract void csLeave();
+    public abstract String csLeave();
 
     public abstract void processCSRequest(Message msg);
 

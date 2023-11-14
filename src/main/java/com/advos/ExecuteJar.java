@@ -24,6 +24,7 @@ public class ExecuteJar {
     private final boolean linux;
     private final Config config;
     private final String logFilePath;
+    private final int protocol;
 
     private CommandLine parseArgs(String[] args) {
         Options options = new Options();
@@ -60,6 +61,10 @@ public class ExecuteJar {
         logPathOption.setRequired(true);
         options.addOption(logPathOption);
 
+        Option protocolOption = new Option("p", "protocol", true, "protocol to use");
+        logPathOption.setRequired(true);
+        options.addOption(protocolOption);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
 
@@ -77,10 +82,12 @@ public class ExecuteJar {
             String dcHost,
             int nodeId,
             boolean local,
-            boolean linux
+            boolean linux,
+            int protocol
     ) {
         String jarCommand = "java -jar " + this.jarPath + " com.advos.MutualExclusionTesting -c " +
-                (local ? this.configFile : this.configFileOnDC) + " -l " + this.logFilePath + " -id " + nodeId;
+                (local ? this.configFile : this.configFileOnDC) + " -l " + this.logFilePath + " -id " + nodeId
+                + " -p " + protocol;
 
         String sshCommand = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no " +
                 "-i " + this.sshKeyFile + " " + this.netid + "@" + dcHost + " '" + jarCommand + "'";
@@ -118,6 +125,7 @@ public class ExecuteJar {
         this.local = cmd.hasOption("lo");
         this.logFilePath = cmd.getOptionValue("log_file_path");
         this.linux = System.getProperty("os.name").equalsIgnoreCase("linux");
+        this.protocol = Integer.parseInt(cmd.getOptionValue("protocol"));
         this.configFile = cmd.getOptionValue("configFile");
 
         ConfigParser configParser = new ConfigParser(cmd.hasOption("v"));
@@ -143,7 +151,7 @@ public class ExecuteJar {
             int nodeId = nodeInfo.getId();
             String dcHost = nodeInfo.getHost();
             executorService.submit(() ->
-                    executeBashCmd(dcHost, nodeId, this.local, this.linux));
+                    executeBashCmd(dcHost, nodeId, this.local, this.linux, this.protocol));
         }
 
         executorService.shutdown();

@@ -47,6 +47,7 @@ public class MutualExclusionTesting {
         CommandLine cmd = MutualExclusionTesting.parseArgs(args);
         int nodeId = Integer.parseInt(cmd.getOptionValue("nodeId"));
         String logPath = cmd.getOptionValue("log_file_path");
+        int protocol = Integer.parseInt(cmd.getOptionValue("protocol", "1"));
         MutualExclusionTesting.configFile = cmd.getOptionValue("configFile");
 
         ConfigParser configParser = new ConfigParser(false);
@@ -57,7 +58,7 @@ public class MutualExclusionTesting {
         }
         Config config = configParser.getConfig();
 
-        this.node = new Node(config, config.getNode(nodeId), logPath);
+        this.node = new Node(config, config.getNode(nodeId), logPath, protocol);
     }
 
     public void execute() {

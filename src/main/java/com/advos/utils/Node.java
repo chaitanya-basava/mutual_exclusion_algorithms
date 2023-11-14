@@ -4,6 +4,7 @@ import com.advos.MutualExclusionTesting;
 import com.advos.cs.CriticalSection;
 import com.advos.cs.TimeRunnerCriticalSection;
 import com.advos.manager.MutexManager;
+import com.advos.manager.RicartAgarwala;
 import com.advos.manager.RoucairolCarvalhoManager;
 import com.advos.message.*;
 import com.advos.models.Config;
@@ -32,14 +33,16 @@ public class Node {
     private final Set<Integer> terminate = new HashSet<>();
     private final String logPath;
 
-    public Node(Config config, NodeInfo nodeInfo, String logPath) {
+    public Node(Config config, NodeInfo nodeInfo, String logPath, int protocol) {
         this.config = config;
         this.logPath = logPath;
         this.nodeInfo = nodeInfo;
         this.lamportClock = new AtomicLong(0);
 
         CriticalSection cs = new TimeRunnerCriticalSection(this.config.getMeanCSExecutionTime());
-        this.mutexManager = new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), this);
+        this.mutexManager =
+                (protocol == 1) ? new RoucairolCarvalhoManager(cs, this.nodeInfo.getNeighbors(), this) :
+                        new RicartAgarwala(cs, this.nodeInfo.getNeighbors(), this);
 
         new Thread(this::startServer, "Socket Server Thread").start();
         this.startClient();
@@ -138,7 +141,9 @@ public class Node {
 
             this.mutexManager.csEnter();
             this.mutexManager.executeCS();
-            this.mutexManager.csLeave();
+            String str = this.mutexManager.csLeave();
+
+            logger.info("Critical Section Details: " + str);
         }
     }
 

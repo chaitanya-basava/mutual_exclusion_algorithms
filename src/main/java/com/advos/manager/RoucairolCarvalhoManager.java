@@ -34,13 +34,13 @@ public class RoucairolCarvalhoManager extends MutexManager {
                 super.setCSDetails(node.getLamportClock());
                 super.setRequestingCS(true);
 
-                node.incrLamportClock();
                 for (Map.Entry<Integer, Boolean> entry : super.getKeys().entrySet()) {
                     if(Boolean.FALSE.equals(entry.getValue())) {
                         node.send(entry.getKey(), new Request(node.getLamportClock(), node.getNodeInfo().getId()), false);
                         this.getCurrentCSDetails().incrementMsgCount();
                     }
                 }
+                node.incrLamportClock();
             }
         }
 
@@ -48,7 +48,7 @@ public class RoucairolCarvalhoManager extends MutexManager {
     }
 
     @Override
-    public void csLeave() {
+    public String csLeave() {
         synchronized(node) {
             synchronized(this) {
                 super.setRequestingCS(false);
@@ -73,9 +73,9 @@ public class RoucairolCarvalhoManager extends MutexManager {
                 super.clearDifferedRequests();
 
                 CriticalSectionDetails prevCSDetails = super.addAndClearCurrentCSDetails();
-                logger.info("Critical Section Details: " + prevCSDetails.toString());
 
                 super.setPreviousCSDetails(newPrevRun);
+                return prevCSDetails.toString();
             }
         }
     }
