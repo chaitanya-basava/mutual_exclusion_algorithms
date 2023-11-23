@@ -1,7 +1,5 @@
 # Mutual exclusion algorithms
 
-## Roucairol and Carvalho’s algorithm
-
 This is the implementation of the `Roucairol and Carvalho` and `Ricart Agarwal` distributed
 mutual exclusion algorithms, implemented as course project for Advanced OS (CS 6378).
 
