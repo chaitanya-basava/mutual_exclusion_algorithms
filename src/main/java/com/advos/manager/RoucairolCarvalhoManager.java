@@ -126,15 +126,15 @@ public class RoucairolCarvalhoManager extends MutexManager {
                     return;
                 }
 
-                if(msg.getClock() < super.getCurrentCSDetails().getCSRequestTime()) { // requesting node has lower clock (higher priority)
+                if(msg.getClock() < super.getCurrentCSDetails().getCSRequestTime()) {
+                    // requesting node has lower clock (higher priority)
                     this.sendReplyAndRequest(msg);
-                } else if(msg.getClock() == super.getCurrentCSDetails().getCSRequestTime()) { // same clock
-                    if(msg.getSourceNodeId() < node.getNodeInfo().getId()) {
-                        this.sendReplyAndRequest(msg);
-                    } else {
-                        this.differRequest(msg);
-                    }
+                } else if(msg.getClock() == super.getCurrentCSDetails().getCSRequestTime() &&
+                        msg.getSourceNodeId() < node.getNodeInfo().getId()) {
+                    // same clock, then nodeId is tye breaker
+                    this.sendReplyAndRequest(msg);
                 } else {
+                    // any other case differ
                     this.differRequest(msg);
                 }
             }
