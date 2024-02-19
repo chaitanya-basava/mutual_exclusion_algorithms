@@ -1,4 +1,4 @@
-# Mutual exclusion algorithms
+# Distributed Mutual exclusion algorithms
 
 This is the implementation of the `Roucairol and Carvalho` and `Ricart Agarwal` distributed
 mutual exclusion algorithms, implemented as course project for Advanced OS (CS 6378).
